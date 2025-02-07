@@ -51,9 +51,8 @@
                 alert("Please enter a valid Username and Room ID");
                 return;
             }
-
-            ws = new WebSocket(`ws://${window.location.host}`);
-
+            ws = new WebSocket(`wss://chat-app-jbvk.onrender.com`);
+            // ws = new WebSocket(`ws://${window.location.host}`);
             ws.onopen = () => {
                 console.log(`Connected to the server, joining room: ${room_id} as ${username}`);
                 ws.send(JSON.stringify({ type: 'join', room_id, username }));
