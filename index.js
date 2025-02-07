@@ -1,58 +1,63 @@
+
 const express = require('express');
+const http = require('http');
 const WebSocket = require('ws');
 const path = require('path');
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-// Serve static files (if needed)
-app.use(express.static('public'));
+// Serve static files from a 'public' directory
+// app.use(express.static(path.join(__dirname, 'public')));
+app.use( express.static( path.join( __dirname, 'public' ) ) );
 
-// Initialize WebSocket server
-const wss = new WebSocket.Server({ port: 8080 });
 
-// WebSocket event handling
-wss.on('connection', (ws) => {
-  console.log('A new client connected.');
+// Create HTTP server by passing the Express app
+const server = http.createServer(app);
 
-  // Event listener for incoming messages
-  ws.on('message', (message) => {
-    console.log('Received message:', message.toString());
+// Integrate WebSocket with the HTTP server
+const wss = new WebSocket.Server({ server });
 
-    // Broadcast the message to all connected clients
-    wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(message.toString());
-      }
+// Array to keep track of all connected clients
+const clients = [];
+
+wss.on('connection', function connection(ws) {
+    console.log("WS connection arrived");
+
+    // Add the new connection to our list of clients
+    clients.push(ws);
+
+    ws.on('message', function incoming(message) {
+        console.log('received: %s', message);
+
+        // Broadcast the message to all clients
+        clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+                console.log("message",message.toString())
+                client.send(message.toString());
+            }
+        });
     });
-  });
 
-  // Event listener for client disconnection
-  ws.on('close', () => {
-    console.log('A client disconnected.');
-  });
+    ws.on('close', () => {
+        // Remove the client from the array when it disconnects
+        const index = clients.indexOf(ws);
+        if (index > -1) {
+            clients.splice(index, 1);
+        }
+    });
+
+    // Send a welcome message on new connection
+    ws.send('Welcome to the chat!');
 });
 
-// API to send HTML content via WebSocket
-app.get('/send-html', (req, res) => {
-  var html_message = '<h1>Hello WebSocket Clients!</h1><p>This is a message from the server.</p>';
-
-  // Broadcast the HTML message to all WebSocket clients
-  wss.clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(html_message);
-    }
-  });
-
-  res.json({ success: true, message: 'HTML message sent to WebSocket clients.' });
-});
-
-// Route to serve an HTML page
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
-});
+// Send index html file
+app.get( '/' , function( req, res) {
+    // Send the index.html file from the 'public' directory
+    res.sendFile( path.join( __dirname, 'public', 'index.html' ) );
+})
 
 // Start the server
-const port = 3000;
-app.listen(port, () => {
-  console.log(`Server started on http://localhost:${port}`);
+server.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
