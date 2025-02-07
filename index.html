@@ -1,25 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebSocket Client</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.0.1/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body>
-  <h1>WebSocket Message Display</h1>
-  <div id="message-container"></div>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-4">
+        <h2 class="text-2xl font-bold mb-2">Real-Time Chat</h2>
+        <div id="messages" class="bg-white p-4 h-64 overflow-auto mb-4"></div>
+        <input type="text" id="messageInput" class="border p-2 w-full">
+        <button id="sendButton" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            Send
+        </button>
+    </div>
+    <script>
+        const ws = new WebSocket(`ws://${window.location.host}`);
+        const messages = document.getElementById('messages');
+        const messageInput = document.getElementById('messageInput');
+        const sendButton = document.getElementById('sendButton');
 
-  <script>
-    // Connect to WebSocket server
-    var socket = new WebSocket("ws://localhost:8080");
+        ws.onopen = () => {
+            console.log('Connected to the server');
+        };
 
-    // Listen for messages
-    socket.onmessage = function(event) {
-      var messageContainer = document.getElementById("message-container");
+        ws.onmessage = (event) => {
+            const message = document.createElement('div');
+            message.textContent = event.data;
+            messages.appendChild(message);
+        };
 
-      // Render the received HTML content
-      messageContainer.innerHTML = event.data;
-    };
-  </script>
+        ws.onerror = (error) => {
+            console.error('WebSocket error:', error);
+        };
+
+        ws.onclose = () => {
+            console.log('Disconnected from the server');
+        };
+
+        sendButton.onclick = () => {
+            const message = messageInput.value;
+            ws.send(message);
+            messageInput.value = '';
+        };
+
+    </script>
 </body>
 </html>
