@@ -51,6 +51,7 @@ wss.on( 'connection', function connection( ws ) {
             client.send( JSON.stringify( {
               type: 'message',
               text: data.text,
+              data: data.data,
               sender: user_name
             } ) );
           }
